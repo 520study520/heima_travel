@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>收藏排行榜</title>
+    <link rel="stylesheet" type="text/css" href="css/common.css">
+    <link rel="stylesheet" type="text/css" href="css/ranking-list.css">
+    <script src="js/jquery-3.3.1.js"></script>
+    <script>
+        var rname = "";   //线路名称
+        var priceBefore = "";  //开始金额
+        var priceEnd = "";  //结束金额
+        $(function () {
+            $("#searchBtn").click(function () {  //点击搜索按钮为上边三个参数赋值
+                rname = $("#rname").val();
+                priceBefore = $("#priceBefore").val();
+                priceEnd = $("#priceEnd").val();
+                load(1);    //调用load方法
+            });
+            load(1);  //页面加载完成就调用load方法
+        });
+
+        //交互数据方法
+        function load(currentPage) {
+            $.post("route/favoriteRank", {
+                currentPage: currentPage,
+                rname: rname,
+                priceBefore: priceBefore,
+                priceEnd: priceEnd
+            }, function (pb) {
+                /* <li><a href="">首页</a></li>
+                 <li className="threeword"><a href="#">上一页</a></li>
+                 <li><a href="#">1</a></li>
+                 <li><a href="#">2</a></li>
+              */
+                var lis = '';   //拼接li标签
+                var firstPage = '<li onclick="load(' + 1 + ')"><a href="javascript:void(0);">首页</a></li>';
+                var before = pb.currentPage - 1;  //上一个页码
+                if (before < 1) {
+                    before = 1;
+                }
+                var beforePage = ' <li className="threeword" onclick="load(' + before + ')"><a href="javascript:void(0);">上一页</a></li>';
+                lis += firstPage;
+                lis += beforePage;
+                //计算循环开始和结束索引的值
+                var begin;
+                var end;
+                if(pb.totalPage < 10){  //总页码不足10页
+                    begin = 1;
+                    end = pb.totalPage;
+                } else {  //大于10页,遵循左5右4原则
+                    begin = pb.currentPage - 5;
+                    end = pb.currentPage + 4;
+                    if(begin < 1){
+                        begin = 1;
+                        end = begin + 9;
+                    }
+                    if(end > pb.totalPage){
+                        end = pb.totalPage;
+                        begin = end - 9;
+                    }
+                }
+                //拼接页码
+                for (var i = begin; i <= end; i++) {
+                    var li = '';
+                    if(pb.currentPage == i){
+                        li = ' <li class="curPage" onclick="load('+i+')"><a href="javascript:void(0);">'+i+'</a></li>';
+                    } else {
+                        li = ' <li onclick="load('+i+')"><a href="javascript:void(0);">'+i+'</a></li>';
+                    }
+                    lis += li;
+                }
+                /*   <li className="threeword"><a href="javascript:;">下一页</a></li>
+                 <li className="threeword"><a href="javascript:;">末页</a></li>*/
+                var next = pb.currentPage + 1;
+                if(next > pb.totalPage){
+                    next = pb.totalPage;
+                }
+                var nextPage = ' <li className="threeword" onclick="load('+next+')"><a href="javascript:void(0);">下一页</a></li>';
+                var lastPage = '<li className="threeword" onclick="load('+pb.totalPage+')"><a href="javascript:void(0);">末页</a></li>';
+                lis += nextPage;
+                lis += lastPage;
+                $("#ulPage").html(lis);  //添加页码到指定展示区
+                var content = '';
+                for (var i = 0; i < pb.list.length; i++) {
+                    var list = pb.list[i];
+                    var cls = '';
+                    if( i == 0){
+                        cls = 'one';
+                    }
+                    if( i == 1){
+                        cls = 'two';
+                    }
+                    var neiRong = '<li>\n' +
+                        '                <span class="num '+cls+'">'+(i+1)+'</span>\n' +
+                        '                <a href="route_detail.html?rid='+list.rid+'"><img src="'+ list.rimage +'" alt=""></a>\n' +
+                        '                <h4><a href="route_detail.html?rid='+list.rid+'">'+list.rname+'</a></h4>\n' +
+                        '                <p>\n' +
+                        '                    <b class="price">&yen;<span>'+list.price+'</span>起</b>\n' +
+                        '                    <span class="shouchang">已收藏'+list.count+'次</span>\n' +
+                        '                </p>\n' +
+                        '            </li>';
+                    content += neiRong;
+                }
+                $("#contentUl").html(content);  //添加内容到指定展示区
+                window.scrollTo(0,150);  //窗口定位到指定位置
+            });
+        }
+    </script>
+</head>
+<body>
+<div id="ha"></div>
+<!--引入头部-->
+<div id="header"></div>
+<div class="contant">
+    <div class="shaixuan">
+        <span>线路名称</span>
+        <input type="text" name="rname" id="rname">
+        <span>金额</span>
+        <input type="text" name="priceBefore" id="priceBefore">~<input type="text" name="priceEnd" id="priceEnd">
+        <button id="searchBtn">搜索</button>
+    </div>
+    <div class="list clearfix">
+        <ul id="contentUl">
+
+
+        </ul>
+    </div>
+    <div class="pageNum">
+        <ul id="ulPage">
+            <!--<li><a href="">首页</a></li>
+            <li class="threeword"><a href="#">上一页</a></li>
+            <li><a href="#">1</a></li>
+            <li><a href="#">2</a></li>
+            <li><a href="#">3</a></li>
+            <li><a href="#">4</a></li>
+            <li><a href="#">5</a></li>
+            <li><a href="#">6</a></li>
+            <li><a href="#">7</a></li>
+            <li><a href="#">8</a></li>
+            <li><a href="#">9</a></li>
+            <li><a href="#">10</a></li>
+            <li class="threeword"><a href="javascript:;">下一页</a></li>
+            <li class="threeword"><a href="javascript:;">末页</a></li>-->
+        </ul>
+    </div>
+</div>
+
+<!--导入底部-->
+<div id="footer"></div>
+<!--导入布局js，共享header和footer-->
+<script type="text/javascript" src="js/include.js"></script>
+</body>
+</html>
